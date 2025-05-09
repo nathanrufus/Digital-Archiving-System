@@ -1,26 +1,26 @@
+// app.js
 const express = require('express');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 
-// Load environment variables
 dotenv.config();
-
-// Connect to MongoDB
 connectDB();
 
-// Create Express app
 const app = express();
-
-// Middleware
 app.use(express.json());
 
-// Root route
-app.get('/', (req, res) => {
-  res.send('Towfiq Logistics Digital Archiving Backend is running...');
+// Routes
+app.use('/api/auth', require('./routes/auth.routes'));
+
+// Sample protected route
+const authenticate = require('./middlewares/auth.middleware');
+const allowRoles = require('./middlewares/role.middleware');
+
+app.get('/api/admin-only', authenticate, allowRoles('admin'), (req, res) => {
+  res.send('Welcome, admin user!');
 });
 
-// Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
