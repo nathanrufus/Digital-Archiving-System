@@ -14,16 +14,12 @@ app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/documents', require('./routes/document.routes'));
 app.use('/api/folders', require('./routes/folder.routes'));
 app.use('/api/backup', require('./routes/backup.routes'));
+app.use('/api/logs', require('./routes/log.routes'));
 
 
-
-// Sample protected route
 const authenticate = require('./middlewares/auth.middleware');
 const allowRoles = require('./middlewares/role.middleware');
 
-app.get('/api/admin-only', authenticate, allowRoles('admin'), (req, res) => {
-  res.send('Welcome, admin user!');
-});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

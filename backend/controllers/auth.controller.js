@@ -1,4 +1,4 @@
-// controllers/auth.controller.js
+const logAction = require('../utils/logger');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
@@ -41,7 +41,11 @@ const login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
-
+    await logAction({
+        user: user._id,
+        action: 'login',
+        description: `User ${user.email} logged in`,
+      });
     res.json({ token, user: { id: user._id, name: user.name, role: user.role } });
   } catch (err) {
     res.status(500).json({ message: err.message });
