@@ -1,4 +1,3 @@
-// app.js
 const express = require('express');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
@@ -15,10 +14,8 @@ app.use('/api/documents', require('./routes/document.routes'));
 app.use('/api/folders', require('./routes/folder.routes'));
 app.use('/api/backup', require('./routes/backup.routes'));
 app.use('/api/logs', require('./routes/log.routes'));
-
-
-const authenticate = require('./middlewares/auth.middleware');
-const allowRoles = require('./middlewares/role.middleware');
+app.use('/api/admin', require('./routes/admin.routes'));
+app.use('/api/settings', require('./routes/settings.routes'));
 
 
 const PORT = process.env.PORT || 5000;
