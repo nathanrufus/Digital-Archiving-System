@@ -13,6 +13,7 @@ app.use(express.json());
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/documents', require('./routes/document.routes'));
 app.use('/api/folders', require('./routes/folder.routes'));
+app.use('/api/backup', require('./routes/backup.routes'));
 
 
 
