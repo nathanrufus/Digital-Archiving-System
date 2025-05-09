@@ -14,5 +14,6 @@ const documentSchema = new mongoose.Schema({
     uploadedAt: Date,
   }],
 }, { timestamps: true });
+documentSchema.index({ name: 'text', description: 'text', tags: 'text' });
 
 module.exports = mongoose.model('Document', documentSchema);

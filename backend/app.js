@@ -12,6 +12,8 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/documents', require('./routes/document.routes'));
+app.use('/api/folders', require('./routes/folder.routes'));
+
 
 
 // Sample protected route
