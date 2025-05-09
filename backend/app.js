@@ -11,6 +11,8 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', require('./routes/auth.routes'));
+app.use('/api/documents', require('./routes/document.routes'));
+
 
 // Sample protected route
 const authenticate = require('./middlewares/auth.middleware');
