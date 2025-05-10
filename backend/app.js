@@ -19,6 +19,8 @@ app.use('/api/settings', require('./routes/settings.routes'));
 
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => console.log(`🚀 Server on http://localhost:${PORT}`));
+}
+module.exports = app;
+

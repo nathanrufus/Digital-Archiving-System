@@ -1,7 +1,6 @@
 const Document = require('../models/Document');
 const fs = require('fs');
 const path = require('path');
-const Document = require('../models/Document');
 
 
 const uploadDocument = async (req, res) => {

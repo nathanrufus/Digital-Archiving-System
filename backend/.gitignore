@@ -16,6 +16,7 @@ Thumbs.db
 
 # Uploads (optional if storing locally)
 uploads/
+backups/
 
 # IDEs
 .vscode/
