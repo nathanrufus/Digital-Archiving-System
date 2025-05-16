@@ -1,7 +1,10 @@
 import React from "react";
+import DashboardPage from "./dashboard/page"
 
 const page = () => {
-  return <div className=" bg-amber-500">Home</div>;
+  return <div className="">
+    <DashboardPage/>
+  </div>;
 };
 
 export default page;

@@ -33,11 +33,11 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen">
-      <div className="w-1/2 bg-white flex items-center justify-center px-8">
+      <div className="w-1/2 bg-white flex items-baseline justify-center px-8 flex-col">
       <img
           src="/towfig.png"
           alt="Towfiq Logistics"
-          className="h-10 mb-4"
+          className="h-15 mb-34"
         />
         <form onSubmit={handleSubmit} className="max-w-md w-full space-y-4">
           <h1 className="text-3xl font-semibold text-gray-800">Sign in</h1>
