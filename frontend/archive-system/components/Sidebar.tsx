@@ -20,9 +20,11 @@ export default function Sidebar() {
     <aside className="w-64 min-h-screen border-r bg-white p-4 flex flex-col justify-between">
       <div>
         <div className="mb-10 flex items-center space-x-2">
-          <Image src="/logo-towfiq.png" alt="Towfiq Logo" width={28} height={28} />
-          <span className="text-xl font-bold text-violet-600">Towfiq</span>
-          <span className="text-lg font-medium text-gray-700">Logistics</span>
+        <img
+          src="/towfig.png"
+          alt="Towfiq Logistics"
+          className="h-15 mb-5"
+        />
         </div>
 
         <nav className="space-y-4">

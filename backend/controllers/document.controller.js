@@ -17,8 +17,8 @@ const uploadDocument = async (req, res) => {
       size: req.file.size,
       type: req.file.mimetype,
       tags: tags ? tags.split(',') : [],
-      description,
-      folder,
+      description: description || '',
+      folder: folder || 'uncategorized',
       uploadedBy: req.user.id,
       versionHistory: [],
     });
