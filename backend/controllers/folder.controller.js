@@ -28,6 +28,34 @@ const getFolders = async (req, res) => {
   }
 };
 
+const deleteFolder = async (req, res) => {
+  try {
+    const folderName = req.params.name;
+
+    // Ensure only the user's folders can be deleted
+    const folder = await Folder.findOneAndDelete({
+      name: folderName,
+      createdBy: req.user.id,
+    });
+
+    if (!folder) {
+      return res.status(404).json({ message: 'Folder not found or not yours' });
+    }
+
+    // Optional: Reassign documents from this folder to 'Untitled' or mark them deleted
+    await Document.updateMany(
+      { folder: folderName, uploadedBy: req.user.id },
+      { $set: { folder: 'Untitled' } }
+    );
+
+    res.json({ message: `Folder '${folderName}' deleted` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error deleting folder' });
+  }
+};
+
+
 // PATCH /folders/:id
 const updateFolder = async (req, res) => {
   try {
@@ -69,4 +97,5 @@ module.exports = {
   getFolders,
   updateFolder,
   getDocumentsInFolder,
+  deleteFolder,
 };

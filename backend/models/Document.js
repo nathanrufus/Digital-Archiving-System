@@ -1,19 +1,25 @@
 const mongoose = require('mongoose');
 
 const documentSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  path: { type: String, required: true },
-  size: { type: Number },
-  type: { type: String },
-  tags: [{ type: String }],
-  description: { type: String },
-  folder: { type: String }, // optional folder label
+  name: String,
+  type: String,
+  size: Number,
+  content: Buffer, // <== store file here
+  tags: {
+    type: [String],
+    default: [], // prevent undefined errors
+  },
+  device: {
+    type: String,
+    enum: ['mobile', 'tablet', 'desktop'],
+    default: '',
+  }  ,
+  description: String,
+  folder: String,
   uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  versionHistory: [{
-    path: String,
-    uploadedAt: Date,
-  }],
-}, { timestamps: true });
-documentSchema.index({ name: 'text', description: 'text', tags: 'text' });
+  versionHistory: [Object],
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
 
 module.exports = mongoose.model('Document', documentSchema);

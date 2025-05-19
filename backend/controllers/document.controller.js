@@ -5,41 +5,49 @@ const path = require('path');
 
 const uploadDocument = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
+    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
-    const { tags, description, folder } = req.body;
+    const { tags, description, folder ,device } = req.body;
+
+    // Backup to disk
+    const filename = `${Date.now()}-${req.file.originalname}`;
+    const localPath = path.join(__dirname, '../uploads', filename);
+    fs.writeFileSync(localPath, req.file.buffer); // Now buffer exists
 
     const doc = new Document({
       name: req.file.originalname,
-      path: req.file.path,
-      size: req.file.size,
       type: req.file.mimetype,
+      size: req.file.size,
+      content: req.file.buffer,
+      path: `uploads/${filename}`,
       tags: tags ? tags.split(',') : [],
       description: description || '',
       folder: folder || 'uncategorized',
+      device: device || '',
       uploadedBy: req.user.id,
       versionHistory: [],
     });
+    
 
     await doc.save();
-    res.status(201).json({ message: 'Document uploaded successfully', document: doc });
+    res.status(201).json({ message: 'Uploaded to MongoDB and saved to disk', document: doc });
 
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Upload failed' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Upload failed', error: err.message });
   }
 };
 
 // GET /documents - list with filters & search
 const getDocuments = async (req, res) => {
   try {
-    const { tag, folder, startDate, endDate, search } = req.query;
-    const query = { uploadedBy: req.user.id };
+    const { tag, folder, startDate, endDate, search, device } = req.query;
+    
+        const query = { uploadedBy: req.user.id };
 
     if (tag) query.tags = tag;
     if (folder) query.folder = folder;
+    if (device) query.device = device;
     if (startDate && endDate) {
       query.createdAt = {
         $gte: new Date(startDate),
@@ -63,10 +71,12 @@ const getDocumentById = async (req, res) => {
     const doc = await Document.findById(req.params.id);
     if (!doc) return res.status(404).json({ message: 'Document not found' });
 
-    const filePath = path.resolve(doc.path);
-    if (!fs.existsSync(filePath)) return res.status(404).json({ message: 'File not found on server' });
+    res.set({
+      'Content-Type': doc.type,
+      'Content-Disposition': `attachment; filename="${doc.name}"`,
+    });
 
-    res.download(filePath, doc.name); // triggers download
+    res.send(doc.content); // send the actual file content
   } catch (err) {
     res.status(500).json({ message: 'Error retrieving file' });
   }
@@ -75,14 +85,15 @@ const getDocumentById = async (req, res) => {
 // PATCH /documents/:id - update metadata
 const updateDocument = async (req, res) => {
   try {
-    const { tags, description, folder } = req.body;
-
+    const { tags, description, folder, device } = req.body
     const doc = await Document.findById(req.params.id);
     if (!doc) return res.status(404).json({ message: 'Document not found' });
 
     if (tags) doc.tags = tags.split(',');
     if (description) doc.description = description;
     if (folder) doc.folder = folder;
+    if (device) doc.device = device;
+
 
     await doc.save();
     res.json({ message: 'Document updated', document: doc });

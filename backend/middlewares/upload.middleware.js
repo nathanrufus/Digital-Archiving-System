@@ -1,20 +1,19 @@
 const multer = require('multer');
-const path = require('path');
 
-// Define storage engine
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/'); 
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + '-' + file.originalname);
-  }
-});
+// Use memory storage to access the file buffer
+const storage = multer.memoryStorage();
 
-// File filter 
+// File filter
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+  const allowedTypes = [
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/zip'
+  ];
+
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
@@ -22,9 +21,9 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Multer config
+// Multer configuration
 const upload = multer({
-  storage,
+  storage, // <-- uses memory
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter,
 });
