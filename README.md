@@ -129,3 +129,7 @@ Digital-Archiving-System/
 ---
 
 
+## For now
+navigate to http://localhost:3000/register and proceed from there where you will register and taken to login page programatically then to dashboard. You will now proceed from there.
+You login first in order to get authenticated.
+I will finish everything by tomorrow just few bugs to take care and i will bundle everything such that it will be seamless
