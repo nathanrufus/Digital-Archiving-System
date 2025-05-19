@@ -48,15 +48,21 @@ export default function CloudPage() {
         </div>
 
         {/* Backup and Restore */}
+        
         <div className="flex flex-col gap-4">
-          <div className="bg-purple-600 text-white rounded-xl p-6 flex flex-col items-center justify-center shadow-md cursor-pointer hover:bg-purple-700 transition">
-            <FiUploadCloud size={36} className="mb-2" />
-            <p className="text-lg font-semibold">Backup</p>
-          </div>
-          <div className="bg-blue-500 text-white rounded-xl p-6 flex flex-col items-center justify-center shadow-md cursor-pointer hover:bg-blue-600 transition">
-            <FiRotateCw size={36} className="mb-2" />
-            <p className="text-lg font-semibold">Restore</p>
-          </div>
+          <Link href="/backup">
+            <div className="bg-purple-600 text-white rounded-xl p-6 flex flex-col items-center justify-center shadow-md cursor-pointer hover:bg-purple-700 transition">
+              <FiUploadCloud size={36} className="mb-2" />
+              <p className="text-lg font-semibold">Backup</p>
+            </div>
+          </Link>
+
+          <Link href="/restore">
+            <div className="bg-blue-500 text-white rounded-xl p-6 flex flex-col items-center justify-center shadow-md cursor-pointer hover:bg-blue-600 transition">
+              <FiRotateCw size={36} className="mb-2" />
+              <p className="text-lg font-semibold">Restore</p>
+            </div>
+          </Link>
         </div>
       </div>
 

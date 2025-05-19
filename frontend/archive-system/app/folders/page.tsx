@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { FiFolder, FiTrash2 } from "react-icons/fi";
+import { FiFolder, FiTrash2, FiPlus } from "react-icons/fi";
 import toast from "react-hot-toast";
 
 interface Folder {
   name: string;
+  category?: string;
 }
 
 interface Category {
@@ -17,19 +18,29 @@ export default function FolderPage() {
   const [recentFolders, setRecentFolders] = useState<Folder[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [folderName, setFolderName] = useState("");
+  const [category, setCategory] = useState("");
 
-  // Fetch folders and categories
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [recentRes, categoryRes] = await Promise.all([
-          axios.get("/api/folders/recent"),
-          axios.get("/api/folders/categories"),
-        ]);
-        setRecentFolders(recentRes.data);
-        setCategories(categoryRes.data);
+        const token = localStorage.getItem("token");
+
+        const res = await axios.get("/api/folders", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const folders = res.data;
+        setRecentFolders(folders.slice(0, 6));
+
+        const uniqueCategories: Category[] = Array.from(
+          new Set<string>(folders.map((folder: Folder) => folder.category || ""))
+        ).map((name) => ({ name }));
+
+        setCategories(uniqueCategories);
       } catch (err) {
-        console.error("Error fetching folders or categories", err);
+        console.error("Error fetching folders", err);
         toast.error("Failed to load folders");
       } finally {
         setLoading(false);
@@ -39,35 +50,65 @@ export default function FolderPage() {
     fetchData();
   }, []);
 
-  // Handle category delete
   const handleDelete = async (categoryName: string) => {
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete the folder '${categoryName}'?\nAll documents will be moved to 'Untitled'.`
+    );
+  
+    if (!confirmDelete) return;
+  
     try {
-      await axios.delete(`/api/folders/categories/${categoryName}`);
+      const token = localStorage.getItem("token");
+      await axios.delete(`/api/folders/${categoryName}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+  
       setCategories((prev) => prev.filter((c) => c.name !== categoryName));
-      toast.success(`Category '${categoryName}' deleted`);
+      toast.success(`Folder '${categoryName}' deleted`);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to delete category");
+      toast.error("Failed to delete folder");
+    }
+  };
+  
+
+  const handleCreateFolder = async () => {
+    if (!folderName) return toast.error("Folder name is required");
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.post("/api/folders", {
+        name: folderName,
+        category,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Folder created");
+      setShowModal(false);
+      setFolderName("");
+      setCategory("");
+      setRecentFolders((prev) => [res.data.folder, ...prev]);
+    } catch (err) {
+      toast.error("Failed to create folder");
     }
   };
 
   return (
     <div className="p-6">
-      {/* Page Header */}
-      <h1 className="text-2xl font-bold text-gray-800 mb-4">Digital Archiving System</h1>
-
-      {/* Search Bar */}
-      <div className="mb-6">
+      <div className="mb-6 flex justify-between items-center">
         <input
           type="text"
           placeholder="Search Documents"
-          className="w-full p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="w-full max-w-md p-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
         />
+        <button
+          onClick={() => setShowModal(true)}
+          className="ml-4 flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg"
+        >
+          <FiPlus /> New Folder
+        </button>
       </div>
 
-      {/* Folder Management Card */}
       <div className="bg-white rounded-xl shadow p-6 flex flex-col lg:flex-row gap-6 justify-between">
-        {/* Left Section */}
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-4">
             <div className="text-yellow-500 text-3xl">📁</div>
@@ -77,7 +118,6 @@ export default function FolderPage() {
             </div>
           </div>
 
-          {/* Recently Accessed */}
           <p className="text-sm font-medium text-gray-700 mb-2">Recently accessed folders</p>
           {loading ? (
             <p className="text-sm text-gray-400">Loading...</p>
@@ -93,7 +133,6 @@ export default function FolderPage() {
           )}
         </div>
 
-        {/* Right Section - By Category */}
         <div className="min-w-[200px]">
           <p className="text-sm font-medium text-gray-700 mb-2">By Category</p>
           {loading ? (
@@ -116,6 +155,42 @@ export default function FolderPage() {
           )}
         </div>
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Create New Folder</h2>
+            <input
+              type="text"
+              placeholder="Folder Name"
+              value={folderName}
+              onChange={(e) => setFolderName(e.target.value)}
+              className="w-full p-2 mb-3 border rounded"
+            />
+            <input
+              type="text"
+              placeholder="Category (optional)"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full p-2 mb-4 border rounded"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateFolder}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg"
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

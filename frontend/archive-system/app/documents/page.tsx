@@ -43,7 +43,14 @@ export default function DocumentsPage() {
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
-        const res = await axios.get('/api/documents');
+        const token = localStorage.getItem("token"); // Get token from storage
+  
+        const res = await axios.get('/api/documents', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+  
         setDocuments(res.data);
       } catch (err) {
         console.error('Failed to load documents:', err);
@@ -51,9 +58,10 @@ export default function DocumentsPage() {
         setLoading(false);
       }
     };
-
+  
     fetchDocuments();
   }, []);
+  
 
   return (
     <div className="p-6">
@@ -103,10 +111,11 @@ export default function DocumentsPage() {
                       )}
                     </td>
                     <td className="py-2 pr-4 flex gap-1">
-                      {doc.devices.includes("mobile") && <FiSmartphone className="text-gray-500" />}
-                      {doc.devices.includes("tablet") && <FiTablet className="text-gray-500" />}
-                      {doc.devices.includes("desktop") && <FiMonitor className="text-gray-500" />}
+                      {(doc.devices || []).includes("mobile") && <FiSmartphone className="text-gray-500" />}
+                      {(doc.devices || []).includes("tablet") && <FiTablet className="text-gray-500" />}
+                      {(doc.devices || []).includes("desktop") && <FiMonitor className="text-gray-500" />}
                     </td>
+
                     <td className="py-2 pr-4 flex gap-2 flex-wrap">
                       {doc.tags.map((tag, tIdx) => (
                         <span

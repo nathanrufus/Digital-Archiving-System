@@ -21,7 +21,7 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
     hideTimer = setTimeout(() => {
       clearTimeout(delayTimer);
       setLoading(false);
-    }, 1200); // Ensure it disappears smoothly
+    }, 0); // Ensure it disappears smoothly
 
     return () => {
       clearTimeout(delayTimer);
