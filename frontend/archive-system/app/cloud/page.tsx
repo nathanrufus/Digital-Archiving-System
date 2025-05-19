@@ -1,7 +1,7 @@
 "use client";
 
 import { FiHardDrive, FiImage, FiMail, FiUploadCloud, FiRotateCw } from "react-icons/fi";
-
+import Link from "next/link";
 export default function CloudPage() {
   return (
     <div className="p-6">
@@ -61,23 +61,34 @@ export default function CloudPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white border rounded-xl p-4 shadow flex flex-col">
-          <div className="text-yellow-500 text-4xl mb-2">📁</div>
-          <p className="text-lg font-semibold">Uploaded Documents</p>
-          <p className="text-sm text-gray-500 mt-1">Last Upload: 16 hours ago</p>
-        </div>
-        <div className="bg-white border rounded-xl p-4 shadow flex flex-col">
-          <div className="text-yellow-500 text-4xl mb-2">📁</div>
-          <p className="text-lg font-semibold">Folder Management</p>
-          <p className="text-sm text-gray-500 mt-1">Last Manage: 22 hours ago</p>
-        </div>
-        <div className="bg-white border rounded-xl p-4 shadow flex flex-col">
-          <div className="text-yellow-500 text-4xl mb-2">📁</div>
-          <p className="text-lg font-semibold">Retrieve Documents</p>
-          <p className="text-sm text-gray-500 mt-1">Last Download: 1 hour ago</p>
-        </div>
-      </div>
+      
+
+<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <Link href="/documents">
+    <div className="bg-white border rounded-xl p-4 shadow flex flex-col cursor-pointer hover:bg-gray-50 transition">
+      <div className="text-yellow-500 text-4xl mb-2">📁</div>
+      <p className="text-lg font-semibold">Uploaded Documents</p>
+      <p className="text-sm text-gray-500 mt-1">Last Upload: 16 hours ago</p>
     </div>
-  );
+  </Link>
+
+  <Link href="/folders">
+    <div className="bg-white border rounded-xl p-4 shadow flex flex-col cursor-pointer hover:bg-gray-50 transition">
+      <div className="text-yellow-500 text-4xl mb-2">📁</div>
+      <p className="text-lg font-semibold">Folder Management</p>
+      <p className="text-sm text-gray-500 mt-1">Last Manage: 22 hours ago</p>
+    </div>
+  </Link>
+
+  <Link href="/retrieve">
+    <div className="bg-white border rounded-xl p-4 shadow flex flex-col cursor-pointer hover:bg-gray-50 transition">
+      <div className="text-yellow-500 text-4xl mb-2">📁</div>
+      <p className="text-lg font-semibold">Retrieve Documents</p>
+      <p className="text-sm text-gray-500 mt-1">Last Download: 1 hour ago</p>
+    </div>
+  </Link>
+</div>
+
+    </div>
+  )
 }

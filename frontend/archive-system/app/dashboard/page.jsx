@@ -3,6 +3,8 @@
 import UploadDropzone from '@/components/UploadDropzone';
 import ActivityGraph from '@/components/ActivityGraph';
 import SummaryCard from '@/components/SummaryCard';
+import Link from "next/link";
+
 
 export default function DashboardPage() {
   return (
@@ -17,24 +19,38 @@ export default function DashboardPage() {
         <UploadDropzone />
         <ActivityGraph />
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-        <SummaryCard
-          title="Uploaded Documents"
-          subtitle="Last Upload: 16 hours ago"
-          icon="📁"
-        />
-        <SummaryCard
-          title="Folder Management"
-          subtitle="Last Manage: 22 hours ago"
-          icon="🗂"
-        />
-        <SummaryCard
-          title="Retrieve Documents"
-          subtitle="Last Download: 1 hour ago"
-          icon="📥"
-        />
+        <Link href="/documents">
+          <div>
+            <SummaryCard
+              title="Uploaded Documents"
+              subtitle="Last Upload: 16 hours ago"
+              icon="📁"
+            />
+          </div>
+        </Link>
+
+        <Link href="/folders">
+          <div>
+            <SummaryCard
+              title="Folder Management"
+              subtitle="Last Manage: 22 hours ago"
+              icon="🗂"
+            />
+          </div>
+        </Link>
+
+        <Link href="/retrieve">
+          <div>
+            <SummaryCard
+              title="Retrieve Documents"
+              subtitle="Last Download: 1 hour ago"
+              icon="📥"
+            />
+          </div>
+        </Link>
       </div>
+
     </>
   );
 }

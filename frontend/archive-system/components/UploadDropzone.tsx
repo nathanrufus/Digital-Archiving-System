@@ -19,15 +19,22 @@ export default function UploadDropzone() {
     formData.append('file', file);
 
     try {
-      await axios.post('/api/documents/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      toast.success('File uploaded successfully!');
-      setFiles([]);
-    } catch (error) {
-      console.error(error);
-      toast.error('Upload failed. Try again.');
-    }
+          const token = localStorage.getItem("token"); // or get it from AuthContext if using
+        
+          await axios.post('/api/documents/upload', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+        
+          toast.success('File uploaded successfully!');
+          setFiles([]);
+        } catch (error) {
+          console.error(error);
+          toast.error('Upload failed. Try again.');
+        }
+        
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
