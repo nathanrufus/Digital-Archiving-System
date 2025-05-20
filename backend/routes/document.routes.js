@@ -8,7 +8,8 @@ const {
     getDocuments,
     getDocumentById,
     updateDocument,
-    deleteDocument 
+    deleteDocument ,
+    downloadDocument
   } = require('../controllers/document.controller');
 
 // POST /api/documents/upload
@@ -21,6 +22,7 @@ router.post(
   
   // GET /documents - list, filter, search
   router.get('/', authenticate, getDocuments);
+  router.get('/documents/download/:id', authenticate, downloadDocument); 
   
   // GET /documents/:id - download/view
   router.get('/:id', authenticate, getDocumentById);

@@ -1,22 +1,24 @@
 const User = require('../models/User');
 
-const updateUserRole = async (req, res) => {
+const getAllUsers = async (req, res) => {
   try {
-    const { role } = req.body;
-    if (!['admin', 'general'].includes(role)) {
-      return res.status(400).json({ message: 'Invalid role' });
-    }
+    const users = await User.find({}, 'name email role'); // exclude password
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch users' });
+  }
+};
 
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+const updateUserRole = async (req, res) => {
+  const { role } = req.body;
+  const { id } = req.params;
 
-    user.role = role;
-    await user.save();
-
+  try {
+    const user = await User.findByIdAndUpdate(id, { role }, { new: true });
     res.json({ message: 'Role updated', user });
   } catch (err) {
     res.status(500).json({ message: 'Failed to update role' });
   }
 };
 
-module.exports = { updateUserRole };
+module.exports = { getAllUsers, updateUserRole };

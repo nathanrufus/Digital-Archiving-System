@@ -73,9 +73,6 @@ export default function BackupRestorePage() {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Digital Archiving System</h1>
-      </div>
 
       <div className="bg-white rounded-xl shadow p-6">
         <div className="flex items-center justify-between mb-4">
@@ -91,39 +88,28 @@ export default function BackupRestorePage() {
             </div>
           </div>
           <button
-            onClick={handleBackup}
-            disabled={loading || isBackingUp}
-            className={`px-4 py-2 rounded-lg text-white transition ${isBackingUp ? "bg-red-600 hover:bg-red-700" : "bg-purple-600 hover:bg-purple-700"}`}
-          >
-            {isBackingUp ? (
-            <button
-                onClick={async () => {
-                try {
+              onClick={async () => {
+                if (isBackingUp) {
+                  try {
                     const token = localStorage.getItem("token");
                     await axios.post("/api/backup/cancel", {}, {
-                    headers: { Authorization: `Bearer ${token}` },
+                      headers: { Authorization: `Bearer ${token}` },
                     });
                     toast.success("Backup cancelled.");
                     setIsBackingUp(false);
-                } catch (err) {
+                  } catch (err) {
                     toast.error("Failed to cancel backup.");
+                  }
+                } else {
+                  handleBackup();
                 }
-                }}
-                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition"
+              }}
+              disabled={loading || isBackingUp}
+              className={`px-4 py-2 rounded-lg text-white transition ${isBackingUp ? "bg-red-600 hover:bg-red-700" : "bg-purple-600 hover:bg-purple-700"}`}
             >
-                Stop Backup
+              {isBackingUp ? "Stop Backup" : "Start Backup"}
             </button>
-            ) : (
-            <button
-                onClick={handleBackup}
-                disabled={loading}
-                className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white transition"
-            >
-                Start Backup
-            </button>
-            )}
 
-          </button>
         </div>
 
         {isBackingUp && (

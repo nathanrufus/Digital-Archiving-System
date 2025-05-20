@@ -7,7 +7,7 @@ import Image from "next/image";
 
 const menu = [
   { label: "Home", icon: <FiHome />, href: "/dashboard" },
-  { label: "Users", icon: <FiUsers />, href: "/users" },
+  { label: "Users", icon: <FiUsers />, href: "/admin/users" },
   { label: "Settings", icon: <FiSettings />, href: "/settings" },
   { label: "Help & Support", icon: <FiHelpCircle />, href: "/help" },
   { label: "Cloud Server (2 TB)", icon: <FiCloud />, href: "/cloud" },

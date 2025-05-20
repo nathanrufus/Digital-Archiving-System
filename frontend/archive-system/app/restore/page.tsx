@@ -17,13 +17,15 @@ export default function RestorePage() {
   const [isRestoring, setIsRestoring] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    fetchRestoreInfo();
+  }, []);
+
   const fetchRestoreInfo = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("/api/backup/info", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await axios.get("/api/backup/restore/info", {
+        headers: { Authorization: `Bearer ${token}` },
       });
       setInfo(res.data);
     } catch (err) {
@@ -31,46 +33,56 @@ export default function RestorePage() {
     }
   };
 
-  const handleRestore = async (file: File) => {
+  const handleRestore = async (file?: File) => {
     try {
       setIsRestoring(true);
       setProgress(0);
 
-      const formData = new FormData();
-      formData.append("file", file);
-
       const token = localStorage.getItem("token");
 
-      await axios.post("/api/restore", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        onUploadProgress: (event) => {
-          if (event.total) {
-            const percent = Math.round((event.loaded * 100) / event.total);
-            setProgress(percent);
-          }
-        },
-      });
+      if (file) {
+        const formData = new FormData();
+        formData.append("file", file);
 
-      toast.success("Restore completed!");
+        await axios.post("/api/backup/restore", formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (event) => {
+            if (event.total) {
+              const percent = Math.round((event.loaded * 100) / event.total);
+              setProgress(percent);
+            }
+          },
+        });
+
+        toast.success("Uploaded backup restored!");
+      } else {
+        // If no file selected, restore from latest backup
+        await axios.post("/api/backup/restore/latest", {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        toast.success("Latest backup restored!");
+      }
+
       fetchRestoreInfo();
     } catch (err) {
+      console.error(err);
       toast.error("Restore failed");
     } finally {
       setIsRestoring(false);
     }
   };
 
-  useEffect(() => {
-    fetchRestoreInfo();
-  }, []);
+  const onRestoreClick = () => {
+    handleRestore(); 
+  };
+  
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Digital Archiving System</h1>
-      </div>
 
       <div className="bg-white rounded-xl shadow p-6">
         <div className="flex items-center justify-between mb-4">
@@ -86,19 +98,12 @@ export default function RestorePage() {
             </div>
           </div>
           <button
-            onClick={() => fileInputRef.current?.click()}
+            onClick={onRestoreClick}
             disabled={isRestoring}
             className="bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition"
           >
             {isRestoring ? "Restoring..." : "Start Restore"}
           </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".zip"
-            className="hidden"
-            onChange={(e) => e.target.files && handleRestore(e.target.files[0])}
-          />
         </div>
 
         {isRestoring && (
@@ -107,7 +112,7 @@ export default function RestorePage() {
               className="bg-sky-600 h-full text-xs text-white text-center"
               style={{ width: `${progress}%` }}
             >
-              Restore on progress... {progress}%
+              Restore in progress... {progress}%
             </div>
           </div>
         )}

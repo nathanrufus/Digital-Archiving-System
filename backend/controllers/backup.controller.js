@@ -81,8 +81,64 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+
+const restoreFromLatestBackup = async (req, res) => {
+  try {
+    // Step 1: Find latest backup file
+    const backupFiles = fs.readdirSync(backupDir)
+      .filter(name => name.startsWith('backup-') && name.endsWith('.zip'))
+      .map(name => ({
+        name,
+        time: fs.statSync(path.join(backupDir, name)).ctime,
+      }))
+      .sort((a, b) => b.time - a.time);
+
+    if (backupFiles.length === 0) {
+      return res.status(404).json({ message: 'No backup files found.' });
+    }
+
+    const latestBackup = path.join(backupDir, backupFiles[0].name);
+
+    // Step 2: Extract archive to a temp folder
+    const directory = await unzipper.Open.file(latestBackup);
+    await directory.extract({ path: extractDir, concurrency: 5 });
+
+    // Step 3: Read metadata.json
+    const metaPath = path.join(extractDir, 'metadata.json');
+    if (!fs.existsSync(metaPath)) {
+      return res.status(400).json({ message: 'metadata.json not found in backup archive.' });
+    }
+
+    const rawDocs = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
+
+    // Step 4: Clean database and insert new docs
+    await Document.deleteMany({});
+
+    const docsToInsert = rawDocs.map(doc => {
+      const { _id, ...rest } = doc;
+      return rest;
+    });
+
+    await Document.insertMany(docsToInsert);
+
+    // Step 5: Done
+    return res.json({
+      message: `Successfully restored ${docsToInsert.length} documents from ${backupFiles[0].name}`,
+    });
+
+  } catch (err) {
+    console.error('Restore from latest backup failed:', err);
+    return res.status(500).json({ message: 'Restore failed', error: err.message });
+  }
+};
+
+
 // POST /restore
 const restoreBackup = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'No file uploaded for restore.' });
+  }
+
   const zipPath = req.file.path;
 
   try {
@@ -223,5 +279,6 @@ module.exports = {
   deleteFolder,
   renameCategory,
   deleteCategory,
+  restoreFromLatestBackup,
   upload
 };

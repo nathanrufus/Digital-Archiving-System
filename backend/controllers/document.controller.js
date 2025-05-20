@@ -116,6 +116,26 @@ const deleteDocument = async (req, res) => {
     res.status(500).json({ message: 'Failed to delete document' });
   }
 };
+// GET /documents/download/:id
+const downloadDocument = async (req, res) => {
+  try {
+    const doc = await Document.findById(req.params.id);
+    if (!doc) return res.status(404).json({ message: 'Document not found' });
+
+    const filePath = path.join(__dirname, '..', doc.path);
+
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'File not found on disk' });
+    }
+
+    res.download(filePath, doc.name); // triggers browser download
+  } catch (err) {
+    console.error('Download error:', err);
+    res.status(500).json({ message: 'Failed to download document' });
+  }
+};
+
 
 module.exports = {
   uploadDocument,
@@ -123,6 +143,7 @@ module.exports = {
   getDocumentById,
   updateDocument,
   deleteDocument,
+  downloadDocument
 };
 
 

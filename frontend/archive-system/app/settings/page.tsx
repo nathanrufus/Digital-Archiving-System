@@ -13,11 +13,21 @@ export default function SettingsPage() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await axios.get('/api/settings');
+        const token = localStorage.getItem("token");
+        const res = await axios.get('/api/settings', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+  
         const data = res.data;
-        setMaxFileSizeMB(data.maxFileSizeMB);
-        setAllowedTypes(data.allowedTypes.join(','));
-        setStorageUsedMB(data.storageUsedMB);
+  
+        if (!data || typeof data !== 'object') {
+          toast.error("Invalid settings data.");
+          return;
+        }
+  
+        if ('maxFileSizeMB' in data) setMaxFileSizeMB(data.maxFileSizeMB);
+        if ('allowedTypes' in data) setAllowedTypes(data.allowedTypes.join(','));
+        if ('storageUsedMB' in data) setStorageUsedMB(data.storageUsedMB);
       } catch (err) {
         console.error(err);
         toast.error('Failed to load settings.');
@@ -27,14 +37,20 @@ export default function SettingsPage() {
     };
     fetchSettings();
   }, []);
+  
 
   const handleUpdate = async () => {
     try {
+      const token = localStorage.getItem("token");
       const payload = {
         maxFileSizeMB,
         allowedTypes: allowedTypes.split(',').map((t) => t.trim()),
       };
-      await axios.patch('/api/settings', payload);
+      await axios.patch('/api/settings', payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       toast.success('Settings updated successfully!');
     } catch (err) {
       console.error(err);
