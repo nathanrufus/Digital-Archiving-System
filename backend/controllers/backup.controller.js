@@ -8,6 +8,25 @@ const Document = require('../models/Document');
 
 const backupDir = path.join(__dirname, '../backups');
 const extractDir = path.join(__dirname, '../restored');
+const restoreFlagPath = path.join(__dirname, '../.restore_in_progress');
+
+const setRestoreFlag = () => {
+  fs.writeFileSync(restoreFlagPath, JSON.stringify({
+    timestamp: new Date().toISOString(),
+    pid: process.pid
+  }));
+};
+
+const clearRestoreFlag = () => {
+  if (fs.existsSync(restoreFlagPath)) {
+    fs.unlinkSync(restoreFlagPath);
+  }
+};
+
+const isRestoreInProgress = () => {
+  return fs.existsSync(restoreFlagPath);
+};
+
 if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir);
 if (!fs.existsSync(extractDir)) fs.mkdirSync(extractDir);
 
@@ -83,53 +102,93 @@ const upload = multer({ storage });
 
 
 const restoreFromLatestBackup = async (req, res) => {
+  if (isRestoreInProgress()) {
+    return res.status(423).json({ 
+      message: 'Another restore operation is already in progress' 
+    });
+  }
+
   try {
+    // Set restore flag
+    setRestoreFlag();
+
     // Step 1: Find latest backup file
     const backupFiles = fs.readdirSync(backupDir)
       .filter(name => name.startsWith('backup-') && name.endsWith('.zip'))
       .map(name => ({
         name,
-        time: fs.statSync(path.join(backupDir, name)).ctime,
+        time: fs.statSync(path.join(backupDir, name)).mtime.getTime()
       }))
       .sort((a, b) => b.time - a.time);
 
     if (backupFiles.length === 0) {
+      clearRestoreFlag();
       return res.status(404).json({ message: 'No backup files found.' });
     }
 
     const latestBackup = path.join(backupDir, backupFiles[0].name);
 
-    // Step 2: Extract archive to a temp folder
-    const directory = await unzipper.Open.file(latestBackup);
-    await directory.extract({ path: extractDir, concurrency: 5 });
+    // Step 2: Prepare extraction directory
+    if (fs.existsSync(extractDir)) {
+      fs.rmSync(extractDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(extractDir, { recursive: true });
 
-    // Step 3: Read metadata.json
+    // Step 3: Extract archive
+    await fs.createReadStream(latestBackup)
+      .pipe(unzipper.Extract({ path: extractDir }))
+      .promise();
+
+    // Step 4: Process metadata
     const metaPath = path.join(extractDir, 'metadata.json');
     if (!fs.existsSync(metaPath)) {
+      clearRestoreFlag();
       return res.status(400).json({ message: 'metadata.json not found in backup archive.' });
     }
 
     const rawDocs = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
 
-    // Step 4: Clean database and insert new docs
+    // Step 5: Update database
     await Document.deleteMany({});
-
     const docsToInsert = rawDocs.map(doc => {
       const { _id, ...rest } = doc;
       return rest;
     });
-
     await Document.insertMany(docsToInsert);
 
-    // Step 5: Done
+    // Step 6: Clean up
+    clearRestoreFlag();
     return res.json({
       message: `Successfully restored ${docsToInsert.length} documents from ${backupFiles[0].name}`,
     });
 
   } catch (err) {
     console.error('Restore from latest backup failed:', err);
-    return res.status(500).json({ message: 'Restore failed', error: err.message });
+    clearRestoreFlag();
+    return res.status(500).json({ 
+      message: 'Restore failed', 
+      error: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
   }
+};
+
+// Add health check endpoint
+const getRestoreStatus = (req, res) => {
+  if (isRestoreInProgress()) {
+    try {
+      const flagContent = fs.readFileSync(restoreFlagPath, 'utf-8');
+      const { timestamp, pid } = JSON.parse(flagContent);
+      return res.json({ 
+        status: 'in_progress',
+        startedAt: timestamp,
+        pid 
+      });
+    } catch (err) {
+      return res.json({ status: 'in_progress' });
+    }
+  }
+  return res.json({ status: 'idle' });
 };
 
 
@@ -280,5 +339,6 @@ module.exports = {
   renameCategory,
   deleteCategory,
   restoreFromLatestBackup,
+  getRestoreStatus,
   upload
 };

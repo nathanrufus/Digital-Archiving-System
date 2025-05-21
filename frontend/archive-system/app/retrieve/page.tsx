@@ -19,6 +19,7 @@ import {
 import toast from "react-hot-toast"
 
 interface DocumentItem {
+	_id: string;     
 	name: string
 	size: number
 	status: string
@@ -156,81 +157,60 @@ export default function RetrieveDocumentsPage() {
 		setShowEditModal(true)
 	}
 	const handleSaveEdit = async () => {
-		if (!selectedDoc) return
+		if (!selectedDoc) return;
 		try {
-			const token =
-				localStorage.getItem("token")
-			await axios.patch(
-				`/api/documents/${selectedDoc.name}`,
-				{
-					tags: editFields.tags
-						.split(",")
-						.map((t) => t.trim()),
-					device: editFields.device,
-					status: editFields.status,
-				},
-				{
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
-				}
+		  const token = localStorage.getItem("token");
+		  await axios.patch(
+			`/api/documents/${selectedDoc._id}`, // ✅ use _id
+			{
+			  tags: editFields.tags.split(",").map((t) => t.trim()),
+			  device: editFields.device,
+			  status: editFields.status,
+			},
+			{
+			  headers: {
+				Authorization: `Bearer ${token}`,
+			  },
+			}
+		  );
+	  
+		  toast.success("Document updated");
+		  setDocuments((prev) =>
+			prev.map((doc) =>
+			  doc._id === selectedDoc._id
+				? {
+					...doc,
+					...editFields,
+					tags: editFields.tags.split(",").map((t) => t.trim()),
+				  }
+				: doc
 			)
-
-			toast.success("Document updated")
-			setDocuments((prev) =>
-				prev.map((doc) =>
-					doc.name === selectedDoc.name
-						? {
-								...doc,
-								...editFields,
-								tags: editFields.tags
-									.split(",")
-									.map((t) => t.trim()),
-						  }
-						: doc
-				)
-			)
-			setShowEditModal(false)
+		  );
+		  setShowEditModal(false);
 		} catch (err) {
-			toast.error(
-				"Failed to update document"
-			)
-			console.error(err)
+		  toast.error("Failed to update document");
+		  console.error(err);
 		}
-	}
-
-	const handleDelete = async (
-		fileName: string
-	) => {
-		if (
-			!confirm(
-				`Are you sure you want to delete ${fileName}?`
-			)
-		)
-			return
-
+	  };
+	  
+	const handleDelete = async (docId: string) => {
+		if (!confirm(`Are you sure you want to delete this document?`)) return;
+	  
 		try {
-			const token =
-				localStorage.getItem("token")
-			await axios.delete(
-				`/api/documents/${fileName}`,
-				{
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
-				}
-			)
-			toast.success("File deleted")
-			setDocuments((prev) =>
-				prev.filter(
-					(doc) => doc.name !== fileName
-				)
-			)
+		  const token = localStorage.getItem("token");
+		  await axios.delete(`/api/documents/${docId}`, {
+			headers: {
+			  Authorization: `Bearer ${token}`,
+			},
+		  });
+		  toast.success("File deleted");
+		  setDocuments((prev) => prev.filter((doc) => doc._id !== docId));
 		} catch (err) {
-			toast.error("Failed to delete file")
-			console.error(err)
+		  toast.error("Failed to delete file");
+		  console.error(err);
 		}
-	}
+	  };
+	  
 
 	return (
 		<div className="p-6">
@@ -356,9 +336,7 @@ export default function RetrieveDocumentsPage() {
 
 												<FiTrash
 													className="cursor-pointer hover:text-red-600"
-													onClick={() =>
-														handleDelete(doc.name)
-													}
+													onClick={() => handleDelete(doc._id)} 
 												/>
 											</div>
 										</td>

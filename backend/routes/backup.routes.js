@@ -13,6 +13,8 @@ router.get('/logs', auth, controller.getBackupLogs);                // GET  /api
 router.post('/restore', auth, controller.upload.single('file'), controller.restoreBackup); // POST /api/backup/restore
 router.get('/restore/info', auth, controller.getRestoreInfo);    
 router.post('/restore/latest', auth, controller.restoreFromLatestBackup);
+router.get('/restore/status', auth, controller.getRestoreStatus);
+
 
 // Folder/category management
 router.patch('/folders/:oldName', auth, controller.renameFolder);       // PATCH /api/backup/folders/:oldName

@@ -85,22 +85,24 @@ const getDocumentById = async (req, res) => {
 // PATCH /documents/:id - update metadata
 const updateDocument = async (req, res) => {
   try {
-    const { tags, description, folder, device } = req.body
+    const { tags, description, folder, device, status } = req.body; // ✅ include status
     const doc = await Document.findById(req.params.id);
     if (!doc) return res.status(404).json({ message: 'Document not found' });
 
-    if (tags) doc.tags = tags.split(',');
+    if (tags) doc.tags = tags;
     if (description) doc.description = description;
     if (folder) doc.folder = folder;
     if (device) doc.device = device;
-
+    if (status) doc.status = status; 
 
     await doc.save();
     res.json({ message: 'Document updated', document: doc });
   } catch (err) {
-    res.status(500).json({ message: 'Failed to update document' });
+    console.error(err);
+    res.status(500).json({ message: 'Failed to update document', error: err.message });
   }
 };
+
 
 // DELETE /documents/:id - soft delete
 const deleteDocument = async (req, res) => {
@@ -108,7 +110,7 @@ const deleteDocument = async (req, res) => {
     const doc = await Document.findById(req.params.id);
     if (!doc) return res.status(404).json({ message: 'Document not found' });
 
-    doc.folder = 'Trash'; // soft delete
+    doc.folder = 'Trash'; 
     await doc.save();
 
     res.json({ message: 'Document moved to trash' });

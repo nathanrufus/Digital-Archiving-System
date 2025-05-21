@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { FiUploadCloud, FiFolder, FiTrash2 } from "react-icons/fi";
+import { FiUploadCloud, FiFolder, FiTrash2, FiRefreshCw } from "react-icons/fi";
 
 interface RestoreInfo {
   lastRestoreTime: string;
@@ -11,14 +11,25 @@ interface RestoreInfo {
   categories: string[];
 }
 
+interface RestoreStatus {
+  status: 'idle' | 'in_progress';
+  startedAt?: string;
+  pid?: number;
+}
+
 export default function RestorePage() {
   const [info, setInfo] = useState<RestoreInfo | null>(null);
   const [progress, setProgress] = useState(0);
   const [isRestoring, setIsRestoring] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [restoreStatus, setRestoreStatus] = useState<RestoreStatus>({ status: 'idle' });
 
   useEffect(() => {
     fetchRestoreInfo();
+    checkRestoreStatus();
+    
+    const interval = setInterval(checkRestoreStatus, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchRestoreInfo = async () => {
@@ -33,12 +44,49 @@ export default function RestorePage() {
     }
   };
 
+  const checkRestoreStatus = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get("/api/backup/restore/status", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setRestoreStatus(res.data);
+      
+      if (isRestoring && res.data.status === 'idle') {
+        setIsRestoring(false);
+        fetchRestoreInfo();
+        toast.success("Restore completed successfully!");
+      }
+    } catch (err) {
+      console.error("Failed to check restore status:", err);
+    }
+  };
+
+  const getErrorMessage = (error: unknown): string => {
+    if (axios.isAxiosError(error)) {
+      return error.response?.data?.message || error.message;
+    } else if (error instanceof Error) {
+      return error.message;
+    }
+    return 'Unknown error occurred';
+  };
+
   const handleRestore = async (file?: File) => {
+    if (restoreStatus.status === 'in_progress') {
+      toast.error("A restore operation is already in progress");
+      return;
+    }
+
     try {
       setIsRestoring(true);
       setProgress(0);
-
       const token = localStorage.getItem("token");
+      const source = axios.CancelToken.source();
+
+      const timeout = setTimeout(() => {
+        source.cancel('Request timeout');
+        toast.error('Restore is taking longer than expected. Please wait...');
+      }, 300000); // 5 minutes
 
       if (file) {
         const formData = new FormData();
@@ -49,6 +97,7 @@ export default function RestorePage() {
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
+          cancelToken: source.token,
           onUploadProgress: (event) => {
             if (event.total) {
               const percent = Math.round((event.loaded * 100) / event.total);
@@ -56,21 +105,22 @@ export default function RestorePage() {
             }
           },
         });
-
-        toast.success("Uploaded backup restored!");
       } else {
-        // If no file selected, restore from latest backup
         await axios.post("/api/backup/restore/latest", {}, {
           headers: { Authorization: `Bearer ${token}` },
+          cancelToken: source.token,
         });
-
-        toast.success("Latest backup restored!");
       }
 
+      clearTimeout(timeout);
+      toast.success("Restore completed successfully!");
       fetchRestoreInfo();
     } catch (err) {
-      console.error(err);
-      toast.error("Restore failed");
+      if (axios.isCancel(err)) {
+        toast.error("Restore was cancelled due to timeout");
+      } else {
+        toast.error(`Restore failed: ${getErrorMessage(err)}`);
+      }
     } finally {
       setIsRestoring(false);
     }
@@ -79,11 +129,9 @@ export default function RestorePage() {
   const onRestoreClick = () => {
     handleRestore(); 
   };
-  
 
   return (
     <div className="p-6">
-
       <div className="bg-white rounded-xl shadow p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
@@ -95,18 +143,35 @@ export default function RestorePage() {
               <p className="text-sm text-gray-500">
                 Last Restore: {info?.lastRestoreTime || "N/A"}
               </p>
+              {restoreStatus.status === 'in_progress' && (
+                <p className="text-sm text-amber-600">
+                  Restore in progress since: {new Date(restoreStatus.startedAt || '').toLocaleString()}
+                </p>
+              )}
             </div>
           </div>
           <button
             onClick={onRestoreClick}
-            disabled={isRestoring}
-            className="bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition"
+            disabled={isRestoring || restoreStatus.status === 'in_progress'}
+            className={`px-4 py-2 rounded-lg transition ${
+              isRestoring || restoreStatus.status === 'in_progress'
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-sky-600 text-white hover:bg-sky-700'
+            }`}
           >
-            {isRestoring ? "Restoring..." : "Start Restore"}
+            {restoreStatus.status === 'in_progress' ? (
+              <span className="flex items-center gap-2">
+                <FiRefreshCw className="animate-spin" /> Restoring...
+              </span>
+            ) : isRestoring ? (
+              "Preparing restore..."
+            ) : (
+              "Start Restore"
+            )}
           </button>
         </div>
 
-        {isRestoring && (
+        {(isRestoring || restoreStatus.status === 'in_progress') && (
           <div className="bg-sky-100 rounded-full h-4 w-full overflow-hidden mb-6">
             <div
               className="bg-sky-600 h-full text-xs text-white text-center"
